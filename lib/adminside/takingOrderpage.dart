@@ -14,11 +14,15 @@ class OrderTaking extends StatefulWidget {
 }
 
 class _OrderTakingState extends State<OrderTaking> {
-  final DatabaseReference _itemRef = FirebaseDatabase.instance.ref().child('items');
-  final DatabaseReference _orderRef = FirebaseDatabase.instance.ref().child('Installment_Orders');
-  final DatabaseReference _guarantorRef = FirebaseDatabase.instance.ref().child('guarantor');
-  final DatabaseReference _customerRef = FirebaseDatabase.instance.ref().child('customer');
-  double totalbalancewithinstallment= 0;
+  final DatabaseReference _itemRef =
+      FirebaseDatabase.instance.ref().child('items');
+  final DatabaseReference _orderRef =
+      FirebaseDatabase.instance.ref().child('Installment_Orders');
+  final DatabaseReference _guarantorRef =
+      FirebaseDatabase.instance.ref().child('guarantor');
+  final DatabaseReference _customerRef =
+      FirebaseDatabase.instance.ref().child('customer');
+  double totalbalancewithinstallment = 0;
   // double installmentFee = 0;
   double _calculatedTotal = 0.0;
   double totalBalanceWithInstallment = 0.0;
@@ -27,7 +31,7 @@ class _OrderTakingState extends State<OrderTaking> {
   double remainingAmount = 0;
   String selectedInstallmentPlan = '3 months';
   double installmentAmount = 0;
-
+  bool _isPlacingOrder = false;
 
   final _formKey = GlobalKey<FormState>();
   TextEditingController _searchController = TextEditingController();
@@ -57,9 +61,6 @@ class _OrderTakingState extends State<OrderTaking> {
   Map<String, String>? _userDetails;
   List<Map<String, dynamic>> _basket = [];
 
-
-
-
   String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) {
       return 'Please enter your email';
@@ -72,6 +73,7 @@ class _OrderTakingState extends State<OrderTaking> {
     }
     return null;
   }
+
   String? _validateCNIC(String? value) {
     if (value == null || value.isEmpty) {
       return 'Please enter your CNIC';
@@ -83,14 +85,12 @@ class _OrderTakingState extends State<OrderTaking> {
     }
     return null;
   }
+
   String? _validatePhoneNumber(String? value) {
     if (value == null || value.isEmpty) {
       return 'Please enter your phone number';
     }
 
-    // Regular expression to match both formats:
-    // 1. Local format: 03XX-XXXXXXX or 03XXXXXXXXX
-    // 2. International format: +92XXXXXXXXXX
     String pattern = r'^(03[0-9]{2}-?[0-9]{7}|(\+92[0-9]{10}))$';
     RegExp regex = RegExp(pattern);
 
@@ -102,73 +102,7 @@ class _OrderTakingState extends State<OrderTaking> {
     }
     return null;
   }
-  // Future<void> _addToBasket() async {
-  //   if (_selectedItem != null) {
-  //     final quantity = int.tryParse(_quantityController.text) ?? 0;
-  //     if (quantity <= 0) {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         const SnackBar(content: Text('Please enter a valid quantity')),
-  //       );
-  //       return;
-  //     }
-  //
-  //     // Parse availableQty as an integer
-  //     final availableQty = int.tryParse(_selectedItem!['item_qty'].toString()) ?? 0;
-  //     if (availableQty < quantity) {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         const SnackBar(content: Text('Not enough items in stock')),
-  //       );
-  //       return;
-  //     }
-  //
-  //     // Parse sale_rate and tax as double
-  //     final net_rate = double.tryParse(_selectedItem!['net_rate'].toString()) ?? 0.0;
-  //
-  //     final total = (net_rate * quantity);
-  //
-  //     // Create a new item map to add to the basket
-  //     final newItem = {
-  //       ..._selectedItem!,
-  //       'quantity': quantity,
-  //       'total': total,
-  //       'image': _selectedItem!['image'], // Include imageUrl
-  //
-  //     };
-  //
-  //     // print(newItem);
-  //     // Add the new item to the basket list
-  //     setState(() {
-  //       _basket.add(newItem); // Add the item to the local basket
-  //       _selectedItem = null; // Reset the selected item
-  //       _quantityController.clear(); // Clear the quantity input field
-  //     });
-  //     print(_basket);
-  //     // Update the available quantity in the database
-  //     final updatedQty = availableQty - quantity;
-  //
-  //     try {
-  //       // Assuming your items are stored in a node called "items" and each item has a unique ID
-  //       final itemRef = FirebaseDatabase.instance.ref("items/${_selectedItem!['id']}");
-  //       await itemRef.update({'item_qty': updatedQty});
-  //
-  //       print("Item quantity updated in database: $updatedQty");
-  //
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         const SnackBar(content: Text('Item added to basket!')),
-  //       );
-  //     } catch (e) {
-  //       // Handle error in updating the database
-  //       print('Error updating item quantity: $e');
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         const SnackBar(content: Text('Error updating item quantity')),
-  //       );
-  //     }
-  //   } else {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text('No item selected')),
-  //     );
-  //   }
-  // }
+
   Future<void> _addToBasket() async {
     if (_selectedItem != null) {
       final quantity = int.tryParse(_quantityController.text) ?? 0;
@@ -180,7 +114,8 @@ class _OrderTakingState extends State<OrderTaking> {
       }
 
       // Parse availableQty as an integer
-      final availableQty = int.tryParse(_selectedItem!['item_qty'].toString()) ?? 0;
+      final availableQty =
+          int.tryParse(_selectedItem!['item_qty'].toString()) ?? 0;
       if (availableQty < quantity) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Not enough items in stock')),
@@ -189,7 +124,8 @@ class _OrderTakingState extends State<OrderTaking> {
       }
 
       // Parse sale_rate and tax as double
-      final net_rate = double.tryParse(_selectedItem!['net_rate'].toString()) ?? 0.0;
+      final net_rate =
+          double.tryParse(_selectedItem!['net_rate'].toString()) ?? 0.0;
 
       final total = (net_rate * quantity);
 
@@ -276,6 +212,7 @@ class _OrderTakingState extends State<OrderTaking> {
     // Navigator.of(context).pop(); // Close the dialog
     setState(() {}); // Update the UI
   }
+
   Future<void> _saveGuarantors() async {
     // Get the input values
     String guarantor1Name = _guarantor1NameController.text.trim();
@@ -289,10 +226,19 @@ class _OrderTakingState extends State<OrderTaking> {
     String guarantor2Address = _guarantor2AddressController.text.trim();
 
     // Check for duplicate entries
-    if (_hasDuplicates(guarantor1Name, guarantor1Phone, guarantor1Cnic, guarantor1Address,
-        guarantor2Name, guarantor2Phone, guarantor2Cnic, guarantor2Address)) {
+    if (_hasDuplicates(
+        guarantor1Name,
+        guarantor1Phone,
+        guarantor1Cnic,
+        guarantor1Address,
+        guarantor2Name,
+        guarantor2Phone,
+        guarantor2Cnic,
+        guarantor2Address)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Duplicate input detected. Please ensure all fields are unique.')),
+        const SnackBar(
+            content: Text(
+                'Duplicate input detected. Please ensure all fields are unique.')),
       );
       return; // Exit the method if duplicates are found, keeping the dialog open
     }
@@ -310,17 +256,34 @@ class _OrderTakingState extends State<OrderTaking> {
     // Successfully saved, close the dialog
     Navigator.of(context).pop();
   }
-  bool _hasDuplicates(String name1, String phone1, String cnic1, String address1,
-      String name2, String phone2, String cnic2, String address2) {
+
+  bool _hasDuplicates(
+      String name1,
+      String phone1,
+      String cnic1,
+      String address1,
+      String name2,
+      String phone2,
+      String cnic2,
+      String address2) {
     return (name1 == name2 ||
         phone1 == phone2 ||
         cnic1 == cnic2 ||
         address1 == address2 ||
-        name1 == phone2 || name1 == cnic2 || name1 == address2 ||
-        phone1 == name2 || phone1 == cnic2 || phone1 == address2 ||
-        cnic1 == name2 || cnic1 == phone2 || cnic1 == address2 ||
-        address1 == name2 || address1 == phone2 || address1 == cnic2);
+        name1 == phone2 ||
+        name1 == cnic2 ||
+        name1 == address2 ||
+        phone1 == name2 ||
+        phone1 == cnic2 ||
+        phone1 == address2 ||
+        cnic1 == name2 ||
+        cnic1 == phone2 ||
+        cnic1 == address2 ||
+        address1 == name2 ||
+        address1 == phone2 ||
+        address1 == cnic2);
   }
+
   void _showGuarantorDialog() {
     showDialog(
       context: context,
@@ -448,16 +411,18 @@ class _OrderTakingState extends State<OrderTaking> {
                   await _saveGuarantors();
                   await _saveDetails();
 
-
                   // Show success message only if save was successful
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Guarantors added successfully!')),
+                    const SnackBar(
+                        content: Text('Guarantors added successfully!')),
                   );
                   // The dialog will close only after successful save
                 } else {
                   // Show error message
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please fill all fields for both guarantors.')),
+                    const SnackBar(
+                        content: Text(
+                            'Please fill all fields for both guarantors.')),
                   );
                 }
               },
@@ -474,6 +439,7 @@ class _OrderTakingState extends State<OrderTaking> {
       },
     );
   }
+
   void _showUserDetailsDialog() {
     showDialog(
       context: context,
@@ -557,37 +523,12 @@ class _OrderTakingState extends State<OrderTaking> {
               },
               child: const Text('Cancel'),
             ),
-            // TextButton(
-            //   onPressed: () async {
-            //     if (_formKey.currentState!.validate()) {
-            //       String cnic = _cnicController.text.trim();
-            //
-            //       bool cnicExists = await _isCnicAlreadyPresent(cnic);
-            //
-            //      if(cnicExists){
-            //        // _showUserExistsWarningDialog(cnic);
-            //
-            //
-            //      }else{
-            //        // Trim the text from controllers
-            //        _nameController.text.trim();
-            //        _emailController.text.trim();
-            //        _cnicController.text.trim();
-            //        _phoneController.text.trim();
-            //        _addressController.text.trim();
-            //        await _saveDetails();
-            //        ScaffoldMessenger.of(context).showSnackBar(
-            //          const SnackBar(content: Text('User details submitted successfully!')),
-            //        );
-            //
-            //        // Close the dialog
-            //        Navigator.of(context).pop();
-            //      }
-            //     }
-            //   },
-            //   child: const Text('Submit'),
-            // ),
-
+            TextButton(
+              onPressed: () {
+                _clearUser(); // Clear the form
+              },
+              child: const Text('Clear'),
+            ),
             TextButton(
               onPressed: () async {
                 if (_formKey.currentState!.validate()) {
@@ -607,7 +548,6 @@ class _OrderTakingState extends State<OrderTaking> {
                           cnic: cnic,
                           previousOrders: previousOrders,
                           onSave: _saveDetails, // Pass the save function
-
                         ),
                       ),
                     );
@@ -615,7 +555,9 @@ class _OrderTakingState extends State<OrderTaking> {
                     // Handle new user submission
                     await _saveDetails();
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('User details submitted successfully!')),
+                      const SnackBar(
+                          content:
+                              Text('User details submitted successfully!')),
                     );
 
                     // Close the dialog
@@ -625,12 +567,12 @@ class _OrderTakingState extends State<OrderTaking> {
               },
               child: const Text('Submit'),
             ),
-
           ],
         );
       },
     );
   }
+
   Future<List<Map<String, dynamic>>> _fetchPreviousOrders(String cnic) async {
     DatabaseEvent customerEvent = await FirebaseDatabase.instance
         .ref()
@@ -643,14 +585,18 @@ class _OrderTakingState extends State<OrderTaking> {
     print("Querying for CNIC: $cnic");
 
     if (customerEvent.snapshot.value != null) {
-      Map<dynamic, dynamic> ordersMap = customerEvent.snapshot.value as Map<dynamic, dynamic>;
-      previousOrders = ordersMap.values.map((order) => Map<String, dynamic>.from(order)).toList();
+      Map<dynamic, dynamic> ordersMap =
+          customerEvent.snapshot.value as Map<dynamic, dynamic>;
+      previousOrders = ordersMap.values
+          .map((order) => Map<String, dynamic>.from(order))
+          .toList();
     } else {
       print("No orders found for CNIC: $cnic");
     }
 
     return previousOrders;
   }
+
   void _searchItem(String barcodeOrItemName) async {
     final DataSnapshot snapshot = await _itemRef.get();
 
@@ -659,13 +605,15 @@ class _OrderTakingState extends State<OrderTaking> {
 
       final lowercaseQuery = barcodeOrItemName.toLowerCase();
 
-
       final item = itemsData.values.firstWhere(
-            (item) =>
-        (
-            item['barcode'].toString().toLowerCase().contains(lowercaseQuery)||
-                item['item_name'].toString().toLowerCase().contains(lowercaseQuery)
-        ),
+        (item) => (item['barcode']
+                .toString()
+                .toLowerCase()
+                .contains(lowercaseQuery) ||
+            item['item_name']
+                .toString()
+                .toLowerCase()
+                .contains(lowercaseQuery)),
         orElse: () => null,
       );
 
@@ -675,6 +623,7 @@ class _OrderTakingState extends State<OrderTaking> {
       });
     }
   }
+
   Widget _buildSearchField(bool isLargeScreen) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
@@ -692,23 +641,32 @@ class _OrderTakingState extends State<OrderTaking> {
       ),
     );
   }
+
   void _calculateTotalWithInstallment() {
     setState(() {
-      double installmentPercentage = double.tryParse(_percentageController.text) ?? 0; // Defaults to 0 if invalid
-      double totalBalance = _calculatedTotal; // Use the calculated total as the base amount
-      double installmentFee = totalBalance * (installmentPercentage / 100); // Calculate installment fee
-      totalbalancewithinstallment = totalBalance + installmentFee; // Total with installment fee
+      double installmentPercentage =
+          double.tryParse(_percentageController.text) ??
+              0; // Defaults to 0 if invalid
+      double totalBalance =
+          _calculatedTotal; // Use the calculated total as the base amount
+      double installmentFee = totalBalance *
+          (installmentPercentage / 100); // Calculate installment fee
+      totalbalancewithinstallment =
+          totalBalance + installmentFee; // Total with installment fee
     });
   }
+
   void _calculateTotal(String value) {
     final quantity = int.tryParse(value) ?? 0;
-    final net_rate = double.tryParse(_selectedItem!['net_rate'].toString()) ?? 0.0;
-    final total = (net_rate * quantity) ;
+    final net_rate =
+        double.tryParse(_selectedItem!['net_rate'].toString()) ?? 0.0;
+    final total = (net_rate * quantity);
 
     setState(() {
       _calculatedTotal = total;
     });
   }
+
   Widget _buildQuantityField(bool isLargeScreen) {
     return TextFormField(
       controller: _quantityController,
@@ -723,12 +681,14 @@ class _OrderTakingState extends State<OrderTaking> {
       onChanged: _calculateTotal,
     );
   }
+
   TextStyle _itemDetailStyle(bool isLargeScreen) {
     return TextStyle(
       fontSize: isLargeScreen ? 18.0 : 16.0,
       fontWeight: FontWeight.w500,
     );
   }
+
   Widget _buildItemDetails(bool isLargeScreen) {
     // Ensure _selectedItem is not null
     if (_selectedItem == null) {
@@ -738,37 +698,43 @@ class _OrderTakingState extends State<OrderTaking> {
       padding: EdgeInsets.symmetric(vertical: isLargeScreen ? 16.0 : 8.0),
       child: Card(
         elevation: 4.0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
         child: Padding(
           padding: EdgeInsets.all(isLargeScreen ? 16.0 : 12.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               ListTile(
-                title:   Text('Item Name: ${_selectedItem!['item_name']}', style: _itemDetailStyle(isLargeScreen)),
+                title: Text('Item Name: ${_selectedItem!['item_name']}',
+                    style: _itemDetailStyle(isLargeScreen)),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Rate: ${_selectedItem!['net_rate']}', style: _itemDetailStyle(isLargeScreen)),
-                    Text('Tax (%): ${_selectedItem!['tax']}', style: _itemDetailStyle(isLargeScreen)),
-                    Text('Available Qty: ${_selectedItem!['item_qty']}', style: _itemDetailStyle(isLargeScreen)),
+                    Text('Rate: ${_selectedItem!['net_rate']}',
+                        style: _itemDetailStyle(isLargeScreen)),
+                    Text('Tax (%): ${_selectedItem!['tax']}',
+                        style: _itemDetailStyle(isLargeScreen)),
+                    Text('Available Qty: ${_selectedItem!['item_qty']}',
+                        style: _itemDetailStyle(isLargeScreen)),
                   ],
                 ),
-                trailing: _selectedItem!['image'] != null && _selectedItem!['image'].isNotEmpty
+                trailing: _selectedItem!['image'] != null &&
+                        _selectedItem!['image'].isNotEmpty
                     ? Image.network(
-                  _selectedItem!['image'],
-                  height: 50, // Set the height of the image
-                  width: 50, // Set the width of the image
-                  fit: BoxFit.cover, // Maintain aspect ratio
-                )
+                        _selectedItem!['image'],
+                        height: 50, // Set the height of the image
+                        width: 50, // Set the width of the image
+                        fit: BoxFit.cover, // Maintain aspect ratio
+                      )
                     : const Icon(Icons.image_not_supported),
               ),
               SizedBox(height: isLargeScreen ? 16.0 : 8.0),
               _buildQuantityField(isLargeScreen),
               SizedBox(height: isLargeScreen ? 16.0 : 8.0),
-              Text('Total: \Pkr ${_calculatedTotal.toStringAsFixed(0)}', style: _itemDetailStyle(isLargeScreen)),
+              Text('Total: \Pkr ${_calculatedTotal.toStringAsFixed(0)}',
+                  style: _itemDetailStyle(isLargeScreen)),
               SizedBox(height: isLargeScreen ? 16.0 : 8.0),
-
               Center(
                 child: SizedBox(
                   width: 200,
@@ -778,7 +744,8 @@ class _OrderTakingState extends State<OrderTaking> {
                       backgroundColor: const Color(0xFFe6b67e),
                       padding: const EdgeInsets.all(10),
                     ),
-                    child: const Text('Add to Basket', style: NewCustomTextStyles.newcustomTextStyle),
+                    child: const Text('Add to Basket',
+                        style: NewCustomTextStyles.newcustomTextStyle),
                   ),
                 ),
               ),
@@ -788,15 +755,6 @@ class _OrderTakingState extends State<OrderTaking> {
       ),
     );
   }
-  // void _removeFromBasket(int index) {
-  //   setState(() {
-  //     _basket.removeAt(index); // Remove the item at the specified index
-  //   });
-  //
-  //   ScaffoldMessenger.of(context).showSnackBar(
-  //     const SnackBar(content: Text("Item removed from basket!")),
-  //   );
-  // }
 
   void _removeFromBasket(int index) async {
     // Get the item to be removed to access its details
@@ -812,7 +770,8 @@ class _OrderTakingState extends State<OrderTaking> {
     // Update the item_qty in the database
     try {
       // Assuming your items are stored in a node called "items" and each item has a unique ID
-      final itemRef = FirebaseDatabase.instance.ref("items/${itemToRemove['itemId']}");
+      final itemRef =
+          FirebaseDatabase.instance.ref("items/${itemToRemove['itemId']}");
 
       // Fetch the current quantity using once()
       DatabaseEvent event = await itemRef.once(); // Get the DatabaseEvent
@@ -822,7 +781,8 @@ class _OrderTakingState extends State<OrderTaking> {
 
       if (snapshot.exists) {
         // Get the current available quantity
-        final currentQty = int.tryParse(snapshot.child('item_qty').value.toString()) ?? 0;
+        final currentQty =
+            int.tryParse(snapshot.child('item_qty').value.toString()) ?? 0;
 
         // Calculate the new quantity
         final newQty = currentQty + quantityToRestore;
@@ -853,11 +813,11 @@ class _OrderTakingState extends State<OrderTaking> {
         return ListTile(
           leading: item['image'] != null && item['image'].isNotEmpty
               ? Image.network(
-            item['image'],
-            height: 50, // Set the height of the image
-            width: 50, // Set the width of the image
-            fit: BoxFit.cover, // Maintain aspect ratio
-          )
+                  item['image'],
+                  height: 50, // Set the height of the image
+                  width: 50, // Set the width of the image
+                  fit: BoxFit.cover, // Maintain aspect ratio
+                )
               : const Icon(Icons.image_not_supported),
           title: Text(item['item_name']),
           subtitle: Column(
@@ -867,20 +827,25 @@ class _OrderTakingState extends State<OrderTaking> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  Text('Quantity: ${item['quantity']}'),const SizedBox(width: 10,),
+                  Text('Quantity: ${item['quantity']}'),
+                  const SizedBox(
+                    width: 10,
+                  ),
                   Text('Rate: ${item['net_rate']}'),
                 ],
               ),
             ],
           ),
           trailing: IconButton(
-              onPressed: () => _removeFromBasket(index), // Call the remove method with the index
+              onPressed: () => _removeFromBasket(
+                  index), // Call the remove method with the index
 
               icon: const Icon(Icons.delete)),
         );
       },
     );
   }
+
   double _calculateTotalBalance() {
     double totalBalancewithoutinst = 0.0;
 
@@ -894,6 +859,7 @@ class _OrderTakingState extends State<OrderTaking> {
     });
     return totalBalancewithoutinst;
   }
+
   int _getMonthsFromPlan(String plan) {
     switch (plan) {
       case '3 months':
@@ -910,6 +876,7 @@ class _OrderTakingState extends State<OrderTaking> {
         return 1; // Default to 1 month if no valid plan is selected
     }
   }
+
   RadioListTile<String> buildRadioButton(String value) {
     return RadioListTile<String>(
       title: Text(value),
@@ -919,11 +886,11 @@ class _OrderTakingState extends State<OrderTaking> {
         setState(() {
           selectedInstallmentPlan = newValue!;
           _calculateInstallmentAmount(); // Recalculate installment amount when plan changes
-
         });
       },
     );
   }
+
   Widget buildInstallmentRadioButtons() {
     return Column(
       children: [
@@ -935,6 +902,7 @@ class _OrderTakingState extends State<OrderTaking> {
       ],
     );
   }
+
   void _calculateInstallmentAmount() {
     // Calculate the installment amount based on the selected plan
     int months = _getMonthsFromPlan(selectedInstallmentPlan);
@@ -942,6 +910,7 @@ class _OrderTakingState extends State<OrderTaking> {
       installmentAmount = remainingAmount / months;
     });
   }
+
   Future<bool> _isCnicAlreadyPresent(String cnic) async {
     bool isCustomerPresent = false;
     bool isGuarantorPresent = false;
@@ -952,7 +921,7 @@ class _OrderTakingState extends State<OrderTaking> {
         .child('customer')
         .orderByChild('cnic')
         .equalTo(cnic)
-        .once();  // Use `once()` which returns a `DatabaseEvent`
+        .once(); // Use `once()` which returns a `DatabaseEvent`
 
     if (customerEvent.snapshot.value != null) {
       isCustomerPresent = true;
@@ -964,7 +933,7 @@ class _OrderTakingState extends State<OrderTaking> {
         .child('guarantor')
         .orderByChild('cnic')
         .equalTo(cnic)
-        .once();  // Use `once()` which returns a `DatabaseEvent`
+        .once(); // Use `once()` which returns a `DatabaseEvent`
 
     if (guarantorEvent.snapshot.value != null) {
       isGuarantorPresent = true;
@@ -973,23 +942,29 @@ class _OrderTakingState extends State<OrderTaking> {
     return isCustomerPresent || isGuarantorPresent;
   }
 
-
   void placeOrder() async {
+    setState(() {
+      _isPlacingOrder = true; // Disable the button to prevent multiple presses
+    });
 
     // Collecting data from the form
     String name = _userDetails?['name'] ?? '';
     String email = _userDetails?['email'] ?? '';
     String phone = _userDetails?['phone'] ?? '';
-    String cnic = _cnicController.text.trim(); // Assuming you have a CNIC input field
+    String cnic =
+        _cnicController.text.trim(); // Assuming you have a CNIC input field
     double downPayment = double.tryParse(_downPaymentController.text) ?? 0.0;
     final int currentRemainingInstallments = selectedInstallmentPlan.length;
     double totalBalance = _calculatedTotal;
-    double installmentFee = (totalBalance * (installmentPercentage / 100)); // Calculate installment fee dynamically
+    double installmentFee = (totalBalance *
+        (installmentPercentage / 100)); // Calculate installment fee dynamically
     // Generate a unique order ID
-    String orderId = _orderRef.push().key ?? 'unknown_order_id'; // Create an order ID using Firebase push
+    String orderId = _orderRef.push().key ??
+        'unknown_order_id'; // Create an order ID using Firebase push
 
     // Assuming you have a method to get the current user's ID (userId)
-    String userId = FirebaseAuth.instance.currentUser?.uid ?? 'unknown_user_id'; // Get current user's ID
+    String userId = FirebaseAuth.instance.currentUser?.uid ??
+        'unknown_user_id'; // Get current user's ID
 
     // Collecting guarantor details
     List<Map<String, dynamic>> guarantors = _guarantors.map((guarantor) {
@@ -1027,17 +1002,19 @@ class _OrderTakingState extends State<OrderTaking> {
       'installmentPercentage': installmentPercentage,
       'downPayment': downPayment,
       'remainingAmount': remainingAmount,
-      'installmentPlan': selectedInstallmentPlan, // Assuming this variable exists
+      'installmentPlan':
+          selectedInstallmentPlan, // Assuming this variable exists
       'remaining_installments': currentRemainingInstallments,
       'installment_amount': installmentAmount,
       'payment_status': 'Partially Paid', // Set payment status
       'installment_fee': installmentFee,
       'total_balance_with_installment': totalBalance + installmentFee,
       'orderId': orderId, // Add orderId
-      'userId': userId,   // Add userId
+      'userId': userId, // Add userId
       'customer_cnic': cnic, // Add user's CNIC
-      'guarantor_cnic': guarantors.map((g) => g['cnic']).toList(), // Add guarantors' CNICs
-      'Date & Time' : DateTime.now().toIso8601String(),
+      'guarantor_cnic':
+          guarantors.map((g) => g['cnic']).toList(), // Add guarantors' CNICs
+      'Date & Time': DateTime.now().toIso8601String(),
       'status': 'Pending',
       'last_payment_date': DateTime.now().toIso8601String(),
     };
@@ -1074,67 +1051,102 @@ class _OrderTakingState extends State<OrderTaking> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Failed to place order: $e")),
       );
+    } finally {
+      setState(() {
+        _isPlacingOrder = false;
+      });
     }
   }
 
-
-
   @override
-
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final bool isLargeScreen = screenWidth > 600;
     double totalBalance = _calculatedTotal;
-    double installmentFee = (totalBalance * (installmentPercentage / 100)); // Calculate installment fee dynamically
-
+    double installmentFee = (totalBalance *
+        (installmentPercentage / 100)); // Calculate installment fee dynamically
 
     return Scaffold(
       appBar: AppBar(
         title: const Text("Order Taking"),
         centerTitle: true,
-        actions: [
-          IconButton(
-            onPressed: _showGuarantorDialog,
-            icon: const Icon(Icons.add),
-          ),
-          IconButton(
-            onPressed: _showUserDetailsDialog, // Show the dialog on button press
-            icon: const Icon(Icons.person),
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.start,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("User Details:", style: TextStyle(fontSize: 20)),
+                const Text("User Details:", style: TextStyle(fontSize: 20)),
+                ElevatedButton(
+                  onPressed: _showUserDetailsDialog,
+                  child: const Text("Add user"),
+                ),
               ],
             ),
             if (_userDetails != null)
               ListTile(
                 title: Text(_userDetails!['name'] ?? ''),
                 subtitle: Text(
-                  'Email: ${_userDetails!['email']}\nPhone: ${_userDetails!['phone']}\nCNIC: ${_userDetails!['cnic']}',
+                  'Email: ${_userDetails!['email']}\n'
+                      'Phone: ${_userDetails!['phone']}\n'
+                      'CNIC: ${_userDetails!['cnic']}\n'
+                      'Address: ${_userDetails!['address']}',
+                ),
+                trailing: IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: () {
+                    setState(() {
+                      _userDetails = null; // Clear the user details
+                    });
+
+                    // Optionally, show a message indicating that the user details have been cleared
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("User details cleared.")),
+                    );
+                  },
                 ),
               ),
+
             const SizedBox(height: 20),
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.start,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("Guarantors", style: TextStyle(fontSize: 20)),
+                const Text("Guarantors Details:",
+                    style: TextStyle(fontSize: 20)),
+                ElevatedButton(
+                    onPressed: _showGuarantorDialog,
+                    child: const Text("Add Guarantors"))
               ],
             ),
-            ..._guarantors.map((guarantor) {
+            ..._guarantors.asMap().entries.map((entry) {
+              int index = entry.key;
+              var guarantor = entry.value;
+
               return ListTile(
                 title: Text(guarantor['name'] ?? ''),
                 subtitle: Text(
-                  'Phone: ${guarantor['phone']}\nCNIC: ${guarantor['cnic']}\nAddress: ${guarantor['address']}',
+                  'Phone: ${guarantor['phone']}\n'
+                      'CNIC: ${guarantor['cnic']}\n'
+                      'Address: ${guarantor['address']}',
+                ),
+                trailing: IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: () {
+                    setState(() {
+                      _guarantors.removeAt(index); // Remove the guarantor from the list
+                    });
+
+                    // Optionally, show a message indicating that the guarantor has been removed
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Guarantor details removed.")),
+                    );
+                  },
                 ),
               );
             }).toList(),
+
             const SizedBox(height: 20),
             const Row(
               mainAxisAlignment: MainAxisAlignment.start,
@@ -1146,18 +1158,16 @@ class _OrderTakingState extends State<OrderTaking> {
               ],
             ),
             _buildSearchField(isLargeScreen),
-
-            if (_selectedItem != null)
-              _buildItemDetails(isLargeScreen),
-
+            if (_selectedItem != null) _buildItemDetails(isLargeScreen),
             const Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                Text("Basket Items", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                Text("Basket Items",
+                    style:
+                        TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
               ],
             ),
             _buildBasketList(),
-
             Text(
               'Total Balance: \Pkr ${_calculateTotalBalance().toStringAsFixed(0)}', // Display total balance
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -1180,7 +1190,6 @@ class _OrderTakingState extends State<OrderTaking> {
               ),
             ),
             const SizedBox(height: 10),
-
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Table(
@@ -1195,13 +1204,16 @@ class _OrderTakingState extends State<OrderTaking> {
                       const TableCell(
                         child: Padding(
                           padding: EdgeInsets.all(8.0),
-                          child: Text('Sub Balance:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          child: Text('Sub Balance:',
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold)),
                         ),
                       ),
                       TableCell(
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
-                          child: Text('${_calculatedTotal} rs', style: const TextStyle(fontSize: 16)),
+                          child: Text('${_calculatedTotal} rs',
+                              style: const TextStyle(fontSize: 16)),
                         ),
                       ),
                     ],
@@ -1211,13 +1223,16 @@ class _OrderTakingState extends State<OrderTaking> {
                       const TableCell(
                         child: Padding(
                           padding: EdgeInsets.all(8.0),
-                          child: Text('Installment Fee %:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          child: Text('Installment Fee %:',
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold)),
                         ),
                       ),
                       TableCell(
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
-                          child: Text('${installmentFee} rs', style: const TextStyle(fontSize: 16)),
+                          child: Text('${installmentFee} rs',
+                              style: const TextStyle(fontSize: 16)),
                         ),
                       ),
                     ],
@@ -1227,13 +1242,17 @@ class _OrderTakingState extends State<OrderTaking> {
                       const TableCell(
                         child: Padding(
                           padding: EdgeInsets.all(8.0),
-                          child: Text('Total Balance:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          child: Text('Total Balance:',
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold)),
                         ),
                       ),
                       TableCell(
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
-                          child: Text('${totalbalancewithinstallment.toStringAsFixed(0)} rs', style: const TextStyle(fontSize: 16)),
+                          child: Text(
+                              '${totalbalancewithinstallment.toStringAsFixed(0)} rs',
+                              style: const TextStyle(fontSize: 16)),
                         ),
                       ),
                     ],
@@ -1241,7 +1260,6 @@ class _OrderTakingState extends State<OrderTaking> {
                 ],
               ),
             ),
-
             const SizedBox(height: 10),
             const Padding(
               padding: EdgeInsets.all(8.0),
@@ -1264,72 +1282,50 @@ class _OrderTakingState extends State<OrderTaking> {
                   // Optionally, ensure the down payment does not exceed the total amount with fees
                   double maxDownPayment = totalBalance + installmentFee;
                   if (downPayment > maxDownPayment) {
-                    _downPaymentController.text = maxDownPayment.toStringAsFixed(2);
+                    _downPaymentController.text =
+                        maxDownPayment.toStringAsFixed(2);
                     downPayment = maxDownPayment;
                   }
 
                   // Calculate the remaining amount
                   setState(() {
-                    remainingAmount = (totalBalance + installmentFee) - downPayment;
+                    remainingAmount =
+                        (totalBalance + installmentFee) - downPayment;
                     _calculateInstallmentAmount();
                   });
                 },
               ),
             ),
-
             const SizedBox(height: 10),
-            Text('Remaining Amount: ${remainingAmount.toStringAsFixed(2)} rs', style: const TextStyle(fontSize: 18)),
+            Text('Remaining Amount: ${remainingAmount.toStringAsFixed(2)} rs',
+                style: const TextStyle(fontSize: 18)),
             const SizedBox(height: 20),
-
-            const Text('Choose Installment Plan:', style: TextStyle(fontSize: 18)),
+            const Text('Choose Installment Plan:',
+                style: TextStyle(fontSize: 18)),
             buildInstallmentRadioButtons(),
             const SizedBox(height: 20),
-
-            Text("Total Installment Amount is: ${installmentAmount.toStringAsFixed(0)}",
-              style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold
-              ),
+            Text(
+              "Total Installment Amount is: ${installmentAmount.toStringAsFixed(0)}",
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
-            ElevatedButton (
-              onPressed: (){
-                placeOrder();
-              },
-              // onPressed: () async {
-              //   if(_formKey.currentState?.validate() == true){
-              //     String cnic = _cnicController.text.trim();
-              //
-              //     int? remainingInstallments = await _getRemainingInstallments(cnic);
-              //
-              //     if (remainingInstallments != null) {
-              //       if (remainingInstallments == 0) {
-              //          placeOrder(); // Allow the order to be placed
-              //       } else {
-              //         ScaffoldMessenger.of(context).showSnackBar(
-              //             SnackBar(content: Text("User has remaining installments: $remainingInstallments. Cannot place a new order."))
-              //         );
-              //       }
-              //     } else {
-              //       // If user does not exist, allow the new order to be placed
-              //        placeOrder();
-              //     }
-              //   }
-              // },
-
+            ElevatedButton(
+              onPressed: _isPlacingOrder
+                  ? null // Button is disabled when _isPlacingOrder is true
+                  : () {
+                      placeOrder();
+                    },
               child: const Text('Place Order'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFe6b67e), // Button color
                 textStyle: const TextStyle(fontSize: 18),
               ),
             ),
-
           ],
         ),
       ),
     );
   }
-
 
   @override
   void initState() {
@@ -1365,8 +1361,15 @@ class _OrderTakingState extends State<OrderTaking> {
     _guarantor2AddressController.clear();
     _guarantor2CnicController.clear();
   }
-}
 
+  void _clearUser() {
+     _nameController.clear();
+     _emailController.clear();
+     _cnicController.clear();
+     _phoneController.clear();
+     _addressController.clear();
+  }
+}
 
 class UserDetailsPage extends StatelessWidget {
   final String cnic;
@@ -1378,7 +1381,6 @@ class UserDetailsPage extends StatelessWidget {
     required this.cnic,
     required this.previousOrders,
     required this.onSave, // Accepting the onSave function
-
   }) : super(key: key);
 
   @override
@@ -1399,40 +1401,44 @@ class UserDetailsPage extends StatelessWidget {
             const SizedBox(height: 16),
             previousOrders.isNotEmpty
                 ? Expanded(
-              child: ListView.builder(
-                itemCount: previousOrders.length,
-                itemBuilder: (context, index) {
-                  var order = previousOrders[index];
-                  var items = order['items'] ?? [];
-                  var orderId = order['orderId'] ?? 'N/A';
-                  var orderDateTime = order['Date & Time'] ?? 'N/A';
-                  var remainingInstallment = order['remaining_installments'] ?? 'N/A';
+                    child: ListView.builder(
+                      itemCount: previousOrders.length,
+                      itemBuilder: (context, index) {
+                        var order = previousOrders[index];
+                        var items = order['items'] ?? [];
+                        var orderId = order['orderId'] ?? 'N/A';
+                        var orderDateTime = order['Date & Time'] ?? 'N/A';
+                        var remainingInstallment =
+                            order['remaining_installments'] ?? 'N/A';
 
-                  return ExpansionTile(
-                    title: Text('Order ID: $orderId'),
-                    subtitle: Column(
-                      crossAxisAlignment:CrossAxisAlignment.start,
-                      children: [
-                        Text('Order Date & Time: $orderDateTime'),
-                        Text("Remaining Installments: $remainingInstallment"),
-                      ],
+                        return ExpansionTile(
+                          title: Text('Order ID: $orderId'),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Order Date & Time: $orderDateTime'),
+                              Text(
+                                  "Remaining Installments: $remainingInstallment"),
+                            ],
+                          ),
+                          children: [
+                            items.isNotEmpty
+                                ? Column(
+                                    children: items.map<Widget>((item) {
+                                      return ListTile(
+                                        title:
+                                            Text('Item: ${item['item_name']}'),
+                                        subtitle: Text(
+                                            'Quantity: ${item['quantity']}, Price: ${item['net_rate']}'),
+                                      );
+                                    }).toList(),
+                                  )
+                                : const Text('No items found for this order.'),
+                          ],
+                        );
+                      },
                     ),
-                    children: [
-                      items.isNotEmpty
-                          ? Column(
-                        children: items.map<Widget>((item) {
-                          return ListTile(
-                            title: Text('Item: ${item['item_name']}'),
-                            subtitle: Text('Quantity: ${item['quantity']}, Price: ${item['net_rate']}'),
-                          );
-                        }).toList(),
-                      )
-                          : const Text('No items found for this order.'),
-                    ],
-                  );
-                },
-              ),
-            )
+                  )
                 : const Text('No previous orders found.'),
             const SizedBox(height: 16), // Add some spacing before the button
             ElevatedButton(

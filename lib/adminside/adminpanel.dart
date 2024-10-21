@@ -9,7 +9,6 @@ import 'package:installment_app/adminside/superadminpanel.dart';
 import 'package:installment_app/adminside/takingOrderpage.dart';
 import 'package:installment_app/clintfront.dart';
 import '../loginpage.dart';
-import 'insta_order_page.dart';
 import 'itemslistpage.dart';
 import 'notificatio_page.dart';
 import 'ordermanagement.dart';

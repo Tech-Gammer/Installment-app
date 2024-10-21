@@ -100,7 +100,6 @@ class _InstallmentOrdersPageState extends State<InstallmentOrdersPage> {
     }
   }
 
-
   Color getStatusColor(String status) {
     switch (status) {
       case 'Pending':
