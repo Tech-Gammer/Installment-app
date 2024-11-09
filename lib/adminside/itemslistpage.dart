@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:installment_app/adminside/adminpanel.dart';
@@ -26,6 +27,8 @@ class _ItemsPageState extends State<ItemsPage> {
 
   TextEditingController categoryController = TextEditingController();
   File? _imageFile;
+  XFile? pickfile;
+
 
   @override
   void initState() {
@@ -96,39 +99,70 @@ class _ItemsPageState extends State<ItemsPage> {
   }
 
   Future<void> _pickImage() async {
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    final ImagePicker imagePicker = ImagePicker();
+    final image = await imagePicker.pickImage(source: ImageSource.gallery);
 
-    if (pickedFile != null) {
+    if (image != null) {
       setState(() {
-        _imageFile = File(pickedFile.path);
+        if (kIsWeb) {
+          // For web, store the picked file in `pickfile`
+          pickfile = image;
+        } else {
+          // For mobile, store the picked file as `file`
+          _imageFile = File(image.path);
+        }
       });
+    } else {
+      // If no image is selected, show a SnackBar with a message
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("No Image Selected")));
     }
   }
 
-  Future<String?> _uploadImage(File imageFile, String? existingImageUrl) async {
+  Future<String?> _uploadImage(XFile imageFile, String? existingImageUrl) async {
     try {
       String fileName;
 
-      // Use the existing image file name if it exists
+      // Use the existing image file name if an existing URL is provided
       if (existingImageUrl != null) {
         Uri uri = Uri.parse(existingImageUrl);
         fileName = uri.pathSegments.last;
       } else {
-        // Otherwise, create a new file name
+        // Otherwise, create a new file name using the current timestamp
         fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
       }
 
-      Reference storageRef = storage.ref().child('$fileName');
+      // Reference to Firebase Storage
+      Reference storageRef = storage.ref().child("Products/$fileName");
 
-      final uploadTask = storageRef.putFile(imageFile);
-      final snapshot = await uploadTask.whenComplete(() {});
+      UploadTask uploadTask;
+
+      // Platform-specific file upload logic
+      if (kIsWeb) {
+        // For web, upload the file as bytes
+        final byte = await pickfile!.readAsBytes();
+        uploadTask = storageRef.putData(byte);
+      } else {
+        // For mobile, upload the file directly
+        uploadTask = storageRef.putFile(imageFile as File);
+      }
+
+      // Wait for the upload to complete
+      final snapshot = await uploadTask.whenComplete(() {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text("Image Uploaded")));
+      });
+
+      // Get and return the download URL of the uploaded image
       final imageUrl = await snapshot.ref.getDownloadURL();
       return imageUrl;
     } catch (e) {
-      // print('Error uploading image: $e');
+      // Handle any errors during upload
+      print("Error uploading image: $e");
       return null;
     }
   }
+
 
   void _showItemDetailsDialog(Map<String, dynamic> item) {
     final TextEditingController nameController = TextEditingController(text: item['item_name'] ?? '');
@@ -334,8 +368,8 @@ class _ItemsPageState extends State<ItemsPage> {
                             );
                           } else {
                             String? newImageUrl;
-                            if (_imageFile != null) {
-                              newImageUrl = await _uploadImage(_imageFile!, imageUrl);
+                            if (_imageFile != null || pickfile!=null) {
+                              newImageUrl = await _uploadImage(_imageFile!=null? _imageFile as XFile: pickfile as XFile, imageUrl);
                             } else {
                               newImageUrl = imageUrl; // Keep the old image URL if no new image is selected
                             }
@@ -345,7 +379,7 @@ class _ItemsPageState extends State<ItemsPage> {
                               'category': currentCategory, // Updated category
                               'unit': currentUnit,         // Updated unit
                               'description': descriptionController.text,
-                              'image': newImageUrl,
+                              'image': newImageUrl!=null? newImageUrl: 'url',
                               'sale_rate': saleController.text,
                               'purchase_rate': purchaseController.text,
                               'tax': taxController.text,
