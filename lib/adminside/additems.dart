@@ -12,13 +12,18 @@ import 'itemslistpage.dart';
 
 
 class AddItems extends StatefulWidget {
-  const AddItems({super.key});
+  // const AddItems({super.key});
+  final Map<String, dynamic>? item;
+
+  AddItems({Key? key, this.item}) : super(key: key);
+
 
   @override
   State<AddItems> createState() => _AddItemsState();
 }
 
 class _AddItemsState extends State<AddItems> {
+  String itemId = "";
   String item_name = "";
   String description = "";
   String purchase_rate = "";
@@ -61,6 +66,21 @@ class _AddItemsState extends State<AddItems> {
     // Add listeners to update net rate when sale rate or tax changes
     src.addListener(calculateNetRate);
     taxc.addListener(calculateNetRate);
+
+    if (widget.item != null) {
+      nc.text = widget.item!['item_name'] ?? '';
+      dc.text = widget.item!['description'] ?? '';
+      prc.text = widget.item!['purchase_rate'] ?? '';
+      src.text = widget.item!['sale_rate'] ?? '';
+      qtyc.text = widget.item!['item_qty'] ?? '';
+      taxc.text = widget.item!['tax'] ?? '';
+      barc.text = widget.item!['barcode'] ?? '';
+      ptcc.text = widget.item!['ptc_code'] ?? '';
+      category = widget.item!['category'] ?? '';
+      unit = widget.item!['unit'] ?? '';
+      url = widget.item!['image'] ?? '';
+      itemId = widget.item!['itemId'] ;
+    }
   }
 
   void calculateNetRate() {
@@ -319,6 +339,9 @@ class _AddItemsState extends State<AddItems> {
         category = "";
         unit = "";  // Reset selected unit
         item_qty = "";  // Reset quantity
+        url = "";
+        url = null;
+
       });
     }).catchError((error) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -329,6 +352,55 @@ class _AddItemsState extends State<AddItems> {
       });
     });
   }
+
+  Future<void> updateItem(String itemId) async {
+    // Logic to update the item in Firebase using the itemId
+    print("Updating item with ID: $itemId");
+
+    // First, upload the new image (if a new image is selected)
+    String? newImageUrl;
+
+    if (file != null || pickfile != null) {
+      // Upload the image and get the URL
+      await uploadImage();  // This will upload the image and set the `url` variable
+      newImageUrl = url;  // Assign the URL from the uploaded image to `newImageUrl`
+    }
+
+    // Update the item details in Firebase
+    try {
+      await FirebaseDatabase.instance
+          .ref()
+          .child('items')
+          .child(itemId)
+          .update({
+        'item_name': nc.text.trim(),
+        'description': dc.text.trim(),
+        'purchase_rate': prc.text.trim(),
+        'sale_rate': src.text.trim(),
+        'barcode': barc.text.trim(),
+        'ptc_code': ptcc.text.trim(),
+        'item_qty': qtyc.text.trim(),
+        'category': category,
+        'unit': unit,
+        'tax': taxc.text.trim(),
+        // Update the image URL if a new image was uploaded
+        if (newImageUrl != null) 'image': newImageUrl,
+      }).then((value) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Item updated successfully")),
+        );
+      }).catchError((error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Error updating item")),
+        );
+      });
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Error updating item")),
+      );
+    }
+  }
+
 
   Future<bool> checkForDuplicates(String itemName, String barcode) async {
     try {
@@ -391,18 +463,34 @@ class _AddItemsState extends State<AddItems> {
             Stack(
               alignment: Alignment.center,
               children: [
+                // CircleAvatar(
+                //   radius: 100,
+                //   backgroundImage: file != null
+                //       ? FileImage(file!)
+                //       : pickfile != null
+                //       ? NetworkImage(pickfile!.path) as ImageProvider
+                //       : null,
+                //   backgroundColor: Colors.grey[200],
+                //   child: file == null && pickfile == null
+                //       ? const Icon(Icons.image, color: Colors.grey, size: 100)
+                //       : null,
+                // ),
                 CircleAvatar(
                   radius: 100,
-                  backgroundImage: file != null
+                  backgroundImage:
+                  file != null
                       ? FileImage(file!)
                       : pickfile != null
                       ? NetworkImage(pickfile!.path) as ImageProvider
+                      : url != null && url!.isNotEmpty
+                      ? NetworkImage(url!)  // Use the image URL from the database if available
                       : null,
                   backgroundColor: Colors.grey[200],
-                  child: file == null && pickfile == null
+                  child: file == null && pickfile == null && (url == null || url!.isEmpty)
                       ? const Icon(Icons.image, color: Colors.grey, size: 100)
                       : null,
                 ),
+
                 Positioned(
                   bottom: 0,
                   right: 0,
@@ -644,6 +732,52 @@ class _AddItemsState extends State<AddItems> {
               ],
             ),
             const SizedBox(height: 20),
+            // Card(
+            //   shape: RoundedRectangleBorder(
+            //     borderRadius: BorderRadius.circular(20.0),
+            //   ),
+            //   child: InkWell(
+            //     onTap: isSaving
+            //         ? null
+            //         : () async {
+            //       setState(() {
+            //         isSaving = true;  // Start saving state
+            //       });
+            //
+            //       // Set the item details from text fields
+            //       item_name = nc.text.toString();
+            //       description = dc.text.toString();
+            //       purchase_rate = prc.text.toString();
+            //       sale_rate = src.text.toString();
+            //       item_qty = qtyc.text.toString();
+            //       tax = taxc.text.toString(); // Ensure tax is captured
+            //
+            //       if (item_name.isEmpty || description.isEmpty || purchase_rate.isEmpty || category.isEmpty || sale_rate.isEmpty || unit.isEmpty || item_qty.isEmpty) {
+            //         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please fill in all the fields")));
+            //         setState(() {
+            //           isSaving = false; // Reset saving state
+            //         });
+            //       } else {
+            //         await save();
+            //         setState(() {
+            //           isSaving = false; // Reset saving state after successful save
+            //         });
+            //       }
+            //     },
+            //     child: Container(
+            //       width: 200.0,
+            //       height: 50.0,
+            //       decoration: const BoxDecoration(color: Color(0xFFE0A45E), borderRadius: BorderRadius.all(Radius.circular(20))),
+            //       child: Center(
+            //         child: Text(
+            //           isSaving ? "Saving..." : "Save Data",
+            //           style: NewCustomTextStyles.newcustomTextStyle,
+            //         ),
+            //       ),
+            //     ),
+            //   ),
+            // ),
+
             Card(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20.0),
@@ -664,31 +798,55 @@ class _AddItemsState extends State<AddItems> {
                   item_qty = qtyc.text.toString();
                   tax = taxc.text.toString(); // Ensure tax is captured
 
-                  if (item_name.isEmpty || description.isEmpty || purchase_rate.isEmpty || category.isEmpty || sale_rate.isEmpty || unit.isEmpty || item_qty.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please fill in all the fields")));
+                  if (item_name.isEmpty ||
+                      description.isEmpty ||
+                      purchase_rate.isEmpty ||
+                      category.isEmpty ||
+                      sale_rate.isEmpty ||
+                      unit.isEmpty ||
+                      item_qty.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Please fill in all the fields")),
+                    );
                     setState(() {
                       isSaving = false; // Reset saving state
                     });
                   } else {
-                    await save();
+                    // Check if itemId exists in widget.item
+                    String? itemId = widget.item?['itemId'];
+
+                    if (itemId != null) {
+                      // Update existing item
+                      await updateItem(itemId);
+                    } else {
+                      // Save new item
+                      await save();
+                    }
+
                     setState(() {
-                      isSaving = false; // Reset saving state after successful save
+                      isSaving = false; // Reset saving state after successful save/update
                     });
                   }
                 },
                 child: Container(
                   width: 200.0,
                   height: 50.0,
-                  decoration: const BoxDecoration(color: Color(0xFFE0A45E), borderRadius: BorderRadius.all(Radius.circular(20))),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFE0A45E),
+                    borderRadius: BorderRadius.all(Radius.circular(20)),
+                  ),
                   child: Center(
                     child: Text(
-                      isSaving ? "Saving..." : "Save Data",
+                      isSaving
+                          ? (widget.item?['itemId'] != null ? "Updating..." : "Saving...")
+                          : (widget.item?['itemId'] != null ? "Update Data" : "Save Data"),
                       style: NewCustomTextStyles.newcustomTextStyle,
                     ),
                   ),
                 ),
               ),
-            ),
+            )
+
           ],
         ),
       ),
@@ -722,3 +880,5 @@ class CustomLoader extends StatelessWidget {
     );
   }
 }
+
+
